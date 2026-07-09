@@ -2,16 +2,33 @@ import { Header } from "@/components/header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
-import { getAllPosts } from "@/lib/notion-api";
+import { getAllPosts, getPostsByCategory, getCategories } from "@/lib/notion-api";
 import { formatDate } from "@/lib/utils";
 
-export const metadata = {
-  title: "모든 글 | DevNotes",
-  description: "DevNotes의 모든 학습 자료를 보세요",
-};
+interface NotesPageProps {
+  searchParams: Promise<{ category?: string }>;
+}
 
-export default async function NotesPage() {
-  const posts = await getAllPosts();
+export async function generateMetadata({ searchParams }: NotesPageProps) {
+  const { category } = await searchParams;
+  const title = category ? `${category} - 모든 글 | DevNotes` : "모든 글 | DevNotes";
+  const description = category ? `${category} 카테고리의 학습 자료` : "DevNotes의 모든 학습 자료를 보세요";
+
+  return { title, description };
+}
+
+export default async function NotesPage({ searchParams }: NotesPageProps) {
+  const { category } = await searchParams;
+  const categories = await getCategories();
+
+  let posts = [];
+  if (category) {
+    posts = await getPostsByCategory(category);
+  } else {
+    posts = await getAllPosts();
+  }
+
+  const title = category ? `${category} 카테고리` : "모든 글";
 
   return (
     <>
@@ -20,10 +37,41 @@ export default async function NotesPage() {
         <section className="space-y-6 pb-8 pt-6 md:pb-12 md:pt-10">
           <div className="container max-w-4xl">
             <div className="flex flex-col gap-4">
-              <h1 className="text-3xl font-bold tracking-tight">모든 글</h1>
+              <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
               <p className="text-lg text-muted-foreground">
                 {posts.length}개의 학습 자료
               </p>
+            </div>
+          </div>
+        </section>
+
+        {/* 카테고리 필터 */}
+        <section className="border-t bg-muted/50">
+          <div className="container max-w-4xl py-6">
+            <div className="flex flex-col gap-3">
+              <span className="text-sm font-medium">카테고리</span>
+              <div className="flex flex-wrap gap-2">
+                <Link href="/notes">
+                  <button className={`px-4 py-2 rounded-full text-sm transition-colors ${
+                    !category
+                      ? "bg-primary text-primary-foreground"
+                      : "border border-input hover:bg-accent"
+                  }`}>
+                    모든 카테고리
+                  </button>
+                </Link>
+                {categories.map((cat) => (
+                  <Link key={cat} href={`/notes?category=${encodeURIComponent(cat)}`}>
+                    <button className={`px-4 py-2 rounded-full text-sm transition-colors ${
+                      category === cat
+                        ? "bg-primary text-primary-foreground"
+                        : "border border-input hover:bg-accent"
+                    }`}>
+                      {cat}
+                    </button>
+                  </Link>
+                ))}
+              </div>
             </div>
           </div>
         </section>
@@ -63,7 +111,7 @@ export default async function NotesPage() {
               <Card>
                 <CardContent className="pt-6">
                   <p className="text-center text-muted-foreground py-12">
-                    아직 발행된 글이 없습니다. Notion에서 글을 작성해주세요!
+                    해당 카테고리의 발행된 글이 없습니다.
                   </p>
                 </CardContent>
               </Card>
