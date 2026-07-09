@@ -3,6 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { getPostBySlug, getPageContent } from "@/lib/notion-api";
+import { getComments } from "@/lib/comments";
+import { CommentsSection } from "@/components/comments-section";
 import { formatDate } from "@/lib/utils";
 import { notFound } from "next/navigation";
 
@@ -35,6 +37,7 @@ export default async function PostPage({ params }: PostPageProps) {
   }
 
   const content = await getPageContent(post.id);
+  const comments = await getComments(post.id);
 
   return (
     <>
@@ -117,7 +120,7 @@ export default async function PostPage({ params }: PostPageProps) {
               </CardContent>
             </Card>
 
-            {/* 이전/다음 글 네비게이션 (선택사항) */}
+            {/* 이전/다음 글 네비게이션 */}
             <div className="flex justify-center gap-4 mt-12">
               <Link
                 href="/notes"
@@ -126,6 +129,10 @@ export default async function PostPage({ params }: PostPageProps) {
                 ← 글 목록으로
               </Link>
             </div>
+
+            {/* 댓글 섹션 */}
+            <hr className="my-12" />
+            <CommentsSection postId={post.id} initialComments={comments} />
           </div>
         </article>
       </main>

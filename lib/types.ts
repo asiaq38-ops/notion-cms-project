@@ -45,3 +45,13 @@ export interface CategoryStats {
   count: number;
   featured: boolean;
 }
+
+export interface Comment {
+  id: string;
+  postId: string;
+  author: string;
+  email: string;
+  content: string;
+  createdAt: Date;
+  approved: boolean;
+}
