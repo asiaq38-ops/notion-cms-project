@@ -1,0 +1,20 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "command": "jq -r '.tool_input.file_path' | { read file_path; if [ -f \"$file_path\" ] && (echo \"$file_path\" | grep -qE '\\.(ts|tsx|js|jsx|json)$'); then npx prettier --write \"$file_path\" 2>/dev/null || true; fi; }"
+      },
+      {
+        "matcher": "Bash",
+        "command": "jq -r '.tool_input | \"\\(.command) - \\(.description // \\\"No description\\\")\"' >> .claude/bash-log.txt 2>/dev/null || true"
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "command": "python3 << 'PYTHON_EOF'\nimport json, sys\ntry:\n    data = json.load(sys.stdin)\n    file_path = data.get('tool_input', {}).get('file_path', '')\n    \n    # Protect sensitive files\n    protected_files = ['.env', '.env.local', 'package-lock.json', 'yarn.lock']\n    for protected in protected_files:\n        if protected in file_path:\n            print(f'❌ Cannot modify protected file: {file_path}')\n            sys.exit(2)\n    \n    sys.exit(0)\nexcept Exception as e:\n    sys.exit(0)\nPYTHON_EOF"
+      }
+    ]
+  }
+}
