@@ -43,7 +43,7 @@ export async function getPostBySlug(slug: string): Promise<BlogPost | null> {
       database_id: NOTION_DATABASE_ID,
       filter: {
         property: 'Slug',
-        text: { equals: slug },
+        rich_text: { contains: slug },
       },
     });
 
@@ -105,7 +105,7 @@ export async function searchPosts(query: string): Promise<BlogPost[]> {
           },
           {
             property: 'Title',
-            text: { contains: query },
+            rich_text: { contains: query },
           },
         ],
       },
