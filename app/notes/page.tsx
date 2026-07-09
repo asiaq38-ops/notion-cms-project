@@ -2,33 +2,46 @@ import { Header } from "@/components/header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
-import { getAllPosts, getPostsByCategory, getCategories } from "@/lib/notion-api";
+import { getAllPosts, getPostsByCategory, getCategories, getTags, getPostsByTag } from "@/lib/notion-api";
 import { formatDate } from "@/lib/utils";
 
 interface NotesPageProps {
-  searchParams: Promise<{ category?: string }>;
+  searchParams: Promise<{ category?: string; tag?: string }>;
 }
 
 export async function generateMetadata({ searchParams }: NotesPageProps) {
-  const { category } = await searchParams;
-  const title = category ? `${category} - 모든 글 | DevNotes` : "모든 글 | DevNotes";
-  const description = category ? `${category} 카테고리의 학습 자료` : "DevNotes의 모든 학습 자료를 보세요";
+  const { category, tag } = await searchParams;
+  let title = "모든 글 | DevNotes";
+  let description = "DevNotes의 모든 학습 자료를 보세요";
+
+  if (category) {
+    title = `${category} - 모든 글 | DevNotes`;
+    description = `${category} 카테고리의 학습 자료`;
+  } else if (tag) {
+    title = `${tag} - 모든 글 | DevNotes`;
+    description = `"${tag}" 태그의 학습 자료`;
+  }
 
   return { title, description };
 }
 
 export default async function NotesPage({ searchParams }: NotesPageProps) {
-  const { category } = await searchParams;
+  const { category, tag } = await searchParams;
   const categories = await getCategories();
+  const tags = await getTags();
 
   let posts = [];
   if (category) {
     posts = await getPostsByCategory(category);
+  } else if (tag) {
+    posts = await getPostsByTag(tag);
   } else {
     posts = await getAllPosts();
   }
 
-  const title = category ? `${category} 카테고리` : "모든 글";
+  let title = "모든 글";
+  if (category) title = `${category} 카테고리`;
+  else if (tag) title = `"${tag}" 태그`;
 
   return (
     <>
@@ -48,30 +61,60 @@ export default async function NotesPage({ searchParams }: NotesPageProps) {
         {/* 카테고리 필터 */}
         <section className="border-t bg-muted/50">
           <div className="container max-w-4xl py-6">
-            <div className="flex flex-col gap-3">
-              <span className="text-sm font-medium">카테고리</span>
-              <div className="flex flex-wrap gap-2">
-                <Link href="/notes">
-                  <button className={`px-4 py-2 rounded-full text-sm transition-colors ${
-                    !category
-                      ? "bg-primary text-primary-foreground"
-                      : "border border-input hover:bg-accent"
-                  }`}>
-                    모든 카테고리
-                  </button>
-                </Link>
-                {categories.map((cat) => (
-                  <Link key={cat} href={`/notes?category=${encodeURIComponent(cat)}`}>
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-3">
+                <span className="text-sm font-medium">카테고리</span>
+                <div className="flex flex-wrap gap-2">
+                  <Link href="/notes">
                     <button className={`px-4 py-2 rounded-full text-sm transition-colors ${
-                      category === cat
+                      !category && !tag
                         ? "bg-primary text-primary-foreground"
                         : "border border-input hover:bg-accent"
                     }`}>
-                      {cat}
+                      모든 카테고리
                     </button>
                   </Link>
-                ))}
+                  {categories.map((cat) => (
+                    <Link key={cat} href={`/notes?category=${encodeURIComponent(cat)}`}>
+                      <button className={`px-4 py-2 rounded-full text-sm transition-colors ${
+                        category === cat
+                          ? "bg-primary text-primary-foreground"
+                          : "border border-input hover:bg-accent"
+                      }`}>
+                        {cat}
+                      </button>
+                    </Link>
+                  ))}
+                </div>
               </div>
+
+              {tags.length > 0 && (
+                <div className="flex flex-col gap-3">
+                  <span className="text-sm font-medium">태그</span>
+                  <div className="flex flex-wrap gap-2">
+                    <Link href="/notes">
+                      <button className={`px-3 py-1 rounded-full text-xs transition-colors ${
+                        !tag
+                          ? "bg-secondary text-secondary-foreground"
+                          : "border border-input hover:bg-accent"
+                      }`}>
+                        모든 태그
+                      </button>
+                    </Link>
+                    {tags.map((t) => (
+                      <Link key={t} href={`/notes?tag=${encodeURIComponent(t)}`}>
+                        <button className={`px-3 py-1 rounded-full text-xs transition-colors ${
+                          tag === t
+                            ? "bg-secondary text-secondary-foreground"
+                            : "border border-input hover:bg-accent"
+                        }`}>
+                          #{t}
+                        </button>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </section>

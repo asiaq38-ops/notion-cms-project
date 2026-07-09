@@ -182,3 +182,33 @@ export async function getFeaturedPosts(limit = 6): Promise<BlogPost[]> {
     return [];
   }
 }
+
+/**
+ * 모든 태그 조회
+ */
+export async function getTags(): Promise<string[]> {
+  try {
+    const posts = await getAllPosts(1000);
+    const tagSet = new Set<string>();
+    posts.forEach((post) => {
+      post.tags?.forEach((tag) => tagSet.add(tag));
+    });
+    return Array.from(tagSet).sort();
+  } catch (error) {
+    console.error('Failed to fetch tags:', error);
+    return [];
+  }
+}
+
+/**
+ * 태그로 글 필터링
+ */
+export async function getPostsByTag(tag: string): Promise<BlogPost[]> {
+  try {
+    const posts = await getAllPosts(1000);
+    return posts.filter((post) => post.tags?.includes(tag) || false);
+  } catch (error) {
+    console.error(`Failed to fetch posts for tag ${tag}:`, error);
+    return [];
+  }
+}
